@@ -60,7 +60,9 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
           }
         });
 
-        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const contentTypeHeader = response.headers["content-type"];
+        const contentType = typeof contentTypeHeader === "string" ? contentTypeHeader : undefined;
+        const blob = new Blob([response.data], { type: contentType });
         setResult(URL.createObjectURL(blob));
         
         toast.dismiss();
