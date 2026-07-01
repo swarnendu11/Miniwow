@@ -52,7 +52,7 @@ export default function Home() {
       </section>
 
       {/* Tools Section */}
-      <section className="space-y-12">
+      <section id="tools" className="space-y-12 scroll-mt-28">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-8">
           <div className="space-y-2">
             <h2 className="text-4xl font-black text-white tracking-tight">

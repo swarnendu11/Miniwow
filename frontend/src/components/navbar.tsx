@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Hammer, Search, Menu, X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,19 +39,12 @@ export const Navbar = () => {
           <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400" />
         </div>
         
-        <div className="flex items-center gap-3 border-l border-white/10 pl-6">
-          <Show when="signed-out">
-            <SignInButton>
-              <button className="text-sm font-bold text-gray-400 hover:text-white transition-colors">Sign In</button>
-            </SignInButton>
-            <SignUpButton>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20">Sign Up</button>
-            </SignUpButton>
-          </Show>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
-        </div>
+        <Link
+          href="/#tools"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+        >
+          Start Free
+        </Link>
       </div>
 
       <button className="md:hidden text-gray-400 p-2" onClick={() => setIsOpen(!isOpen)}>
@@ -81,26 +73,16 @@ export const Navbar = () => {
             <Link href="/video" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">Video Tools</Link>
             <Link href="/ai" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">AI Tools</Link>
             
-            <div className="flex flex-col gap-3 pt-2">
-              <Show when="signed-out">
-                <SignInButton>
-                  <button className="w-full py-3 glass border-white/10 rounded-xl text-sm font-bold text-white">Sign In</button>
-                </SignInButton>
-                <SignUpButton>
-                  <button className="w-full py-3 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-600/20">Sign Up</button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <div className="flex items-center justify-between p-3 glass rounded-xl">
-                  <span className="text-sm font-bold">My Account</span>
-                  <UserButton />
-                </div>
-              </Show>
-            </div>
+            <Link
+              href="/#tools"
+              onClick={() => setIsOpen(false)}
+              className="w-full py-3 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-600/20 text-center"
+            >
+              Start Free
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
     </nav>
   );
 };
-

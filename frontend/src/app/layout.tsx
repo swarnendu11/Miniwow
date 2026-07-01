@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
-import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -28,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable} dark`}>
       <body className="bg-mesh min-h-screen text-gray-200 selection:bg-blue-500/30">
-        <ClerkProvider>
+        <>
           <Navbar />
           
           <main className="pt-24 pb-12 px-6 md:px-12 max-w-7xl mx-auto">
@@ -39,7 +38,7 @@ export default function RootLayout({
             <p>© {new Date().getFullYear()} MiniWow. Built for speed and productivity.</p>
           </footer>
           <Toaster position="bottom-right" theme="dark" />
-        </ClerkProvider>
+        </>
       </body>
     </html>
   );
