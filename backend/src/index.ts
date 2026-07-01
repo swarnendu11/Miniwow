@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 import pdfRoutes from './routes/pdfRoutes';
@@ -11,10 +12,9 @@ import toolRoutes from './routes/toolRoutes';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
 
-// Setup temporary folder for multer uploads
-const tempDir = path.join(__dirname, '../temp');
+// Setup temporary folder for multer uploads in a writable OS temp directory.
+const tempDir = path.join(os.tmpdir(), 'miniwow-temp');
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
@@ -39,6 +39,8 @@ app.get('/', (req, res) => {
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/tools', toolRoutes);
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
-});
+export default app;
+export const config = {
+  runtime: 'nodejs18.x',
+  regions: ['iad', 'cdg', 'sfo1'],
+};

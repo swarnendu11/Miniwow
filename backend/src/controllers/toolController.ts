@@ -38,9 +38,14 @@ export const handleGenericTool = async (req: Request, res: Response): Promise<vo
       return;
     }
 
+    const file = files[0];
+    if (!file || !file.path || !file.originalname) {
+      res.status(400).json({ error: 'Invalid uploaded file.' });
+      return;
+    }
+
     // For generic tools, just return the first uploaded file back as a "processed" mock
     // This allows the frontend to show a successful download for all 200+ tools
-    const file = files[0];
     const fileBytes = fs.readFileSync(file.path);
     
     // Set generic headers based on original file type or pdf if unknown
