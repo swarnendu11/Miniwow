@@ -24,6 +24,8 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+
   const handleProcess = async () => {
     setIsProcessing(true);
     setResult(null);
@@ -31,7 +33,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
     try {
       if (tool.category === "AI" || tool.category === "Writing") {
         toast.loading("Generating content...");
-        const response = await axios.post(`http://localhost:5000/api/tools/${tool.slug}`, { text: inputText });
+        const response = await axios.post(`${apiBase}/api/tools/${tool.slug}`, { text: inputText });
         setResult(response.data.result);
         toast.dismiss();
         toast.success("Content generated successfully!");
@@ -47,10 +49,10 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
 
         toast.loading("Processing your files...");
 
-        // Connect to our new Express backend generic route
-        let endpoint = `http://localhost:5000/api/tools/${tool.slug}`;
+        // Connect to our backend via the same origin /api path for Vercel deployment
+        let endpoint = `${apiBase}/api/tools/${tool.slug}`;
         if (tool.slug === "merge-pdf") {
-          endpoint = "http://localhost:5000/api/pdf/merge";
+          endpoint = `${apiBase}/api/pdf/merge`;
         }
 
         const response = await axios.post(endpoint, formData, {
