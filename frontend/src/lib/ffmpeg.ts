@@ -34,7 +34,8 @@ export const compressVideo = async (file: File): Promise<Blob> => {
   await ff.exec(["-i", "input.mp4", "-vcodec", "libx264", "-crf", "28", "output.mp4"]);
   
   const data = await ff.readFile("output.mp4");
-  return new Blob([data as Uint8Array], { type: "video/mp4" });
+  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+  return new Blob([bytes], { type: "video/mp4" });
 };
 
 export const extractAudio = async (file: File): Promise<Blob> => {
@@ -44,5 +45,6 @@ export const extractAudio = async (file: File): Promise<Blob> => {
   await ff.exec(["-i", "input.mp4", "-q:a", "0", "-map", "a", "output.mp3"]);
   
   const data = await ff.readFile("output.mp3");
-  return new Blob([data as Uint8Array], { type: "audio/mpeg" });
+  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+  return new Blob([bytes], { type: "audio/mpeg" });
 };
