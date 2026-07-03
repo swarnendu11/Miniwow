@@ -1,14 +1,61 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useSyncExternalStore } from "react";
 import { ToolCard } from "@/components/tool-card";
 import { TOOLS, TOOL_CATEGORIES } from "@/constants/tools";
-import { Sparkles, Search, MoveRight } from "lucide-react";
+import { Sparkles, Search, MoveRight, Clock, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const RECENT_TOOLS_KEY = "miniwow_recent_tools";
+const RECENT_TOOLS_EVENT = "miniwow_recent_tools_change";
+type Tool = (typeof TOOLS)[number];
+
+const getRecentToolsSnapshot = () => localStorage.getItem(RECENT_TOOLS_KEY) || "[]";
+const getRecentToolsServerSnapshot = () => "[]";
+const getInitialCategory = () => {
+  if (typeof window === "undefined") {
+    return "all";
+  }
+
+  return new URLSearchParams(window.location.search).get("category") || "all";
+};
+
+const subscribeToRecentTools = (onStoreChange: () => void) => {
+  const handleStorageChange = (event: StorageEvent) => {
+    if (event.key === RECENT_TOOLS_KEY) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorageChange);
+  window.addEventListener(RECENT_TOOLS_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorageChange);
+    window.removeEventListener(RECENT_TOOLS_EVENT, onStoreChange);
+  };
+};
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(getInitialCategory);
+  const recentToolsSnapshot = useSyncExternalStore(
+    subscribeToRecentTools,
+    getRecentToolsSnapshot,
+    getRecentToolsServerSnapshot
+  );
+
+  const recentTools = useMemo(() => {
+    const recentSlugs = JSON.parse(recentToolsSnapshot) as string[];
+    return recentSlugs
+      .map((slug: string) => TOOLS.find(t => t.slug === slug))
+      .filter((tool: Tool | undefined): tool is Tool => Boolean(tool));
+  }, [recentToolsSnapshot]);
+
+  const clearRecentTools = () => {
+    localStorage.removeItem(RECENT_TOOLS_KEY);
+    window.dispatchEvent(new Event(RECENT_TOOLS_EVENT));
+  };
 
   const filteredTools = useMemo(() => {
     return TOOLS.filter(tool => {
@@ -30,7 +77,7 @@ export default function Home() {
           <span>200+ Professional Tools Live</span>
         </div>
         
-        <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white max-w-5xl mx-auto leading-[1.05]">
+        <h1 className="text-5xl md:text-6xl lg:text-8xl font-black tracking-tight text-white max-w-5xl mx-auto leading-[1.05]">
           Digital tools for <span className="gradient-text italic">everyone</span>.
         </h1>
         
@@ -45,11 +92,45 @@ export default function Home() {
             placeholder="Search 200+ tools (e.g. PDF to Word, Resize Image...)" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-16 bg-white/5 border border-white/10 rounded-[2rem] px-8 pl-14 text-lg text-white outline-none focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-2xl"
+            className="w-full h-14 md:h-16 bg-white/5 border border-white/10 rounded-[2rem] px-4 pl-12 md:px-8 md:pl-14 text-base md:text-lg text-white outline-none focus:bg-white/10 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-2xl"
           />
-          <Search size={24} className="absolute left-6 top-[calc(50%+16px)] -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400" />
+          <Search size={20} className="absolute left-5 top-[calc(50%+14px)] md:top-[calc(50%+16px)] md:left-6 md:size-6 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400" />
         </div>
       </section>
+
+      {/* Recent Tools Section */}
+      {recentTools.length > 0 && searchQuery === "" && (
+        <section className="space-y-8">
+          <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-3">
+              <Clock className="text-blue-400" size={24} />
+              <h2 className="text-2xl font-bold text-white">Recently Used</h2>
+            </div>
+            <button
+              type="button"
+              onClick={clearRecentTools}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-xs font-bold text-gray-400 transition-all hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
+              aria-label="Clear recently used tools"
+            >
+              <Trash2 size={15} />
+              Clear
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentTools.map((tool) => (
+              <ToolCard 
+                key={`recent-${tool.slug}`}
+                title={tool.title}
+                description={tool.description}
+                icon={tool.icon}
+                href={`/tools/${tool.slug}`}
+                category={tool.category}
+                gradient={tool.gradient}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Tools Section */}
       <section id="tools" className="space-y-12 scroll-mt-28">

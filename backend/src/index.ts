@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
 
 import pdfRoutes from './routes/pdfRoutes';
 import toolRoutes from './routes/toolRoutes';
@@ -40,6 +41,14 @@ app.use('/api/pdf', pdfRoutes);
 app.use('/api/tools', toolRoutes);
 
 export default app;
+
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Backend server is running locally on port ${PORT}`);
+  });
+}
+
 export const config = {
   runtime: 'nodejs18.x',
   regions: ['iad', 'cdg', 'sfo1'],

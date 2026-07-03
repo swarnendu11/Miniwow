@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Hammer, Search, Menu, X, Sparkles } from "lucide-react";
+import { Hammer, Search, Menu, X, Sparkles, User, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const userId = null; // mocked
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] glass border-b border-white/5 py-4 px-6 md:px-12 flex items-center justify-between">
@@ -20,10 +21,10 @@ export const Navbar = () => {
       </Link>
 
       <div className="hidden md:flex items-center gap-8">
-        <Link href="/pdf" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">PDF Tools</Link>
-        <Link href="/image" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Image Tools</Link>
-        <Link href="/video" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Video Tools</Link>
-        <Link href="/ai" className="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
+        <Link href="/?category=pdf#tools" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">PDF Tools</Link>
+        <Link href="/?category=image#tools" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Image Tools</Link>
+        <Link href="/?category=video#tools" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Video Tools</Link>
+        <Link href="/?category=ai#tools" className="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
           <Sparkles size={14} className="text-purple-400" />
           AI Tools
         </Link>
@@ -38,13 +39,21 @@ export const Navbar = () => {
           />
           <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400" />
         </div>
-        
-        <Link
-          href="/#tools"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
-        >
-          Start Free
-        </Link>
+        {!userId ? (
+          <Link
+            href="/#tools"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+          >
+            Start Free
+          </Link>
+        ) : (
+          <>
+            <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors" title="Dashboard">
+              <LayoutDashboard size={20} />
+            </Link>
+            {/* <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: "w-9 h-9" } }} /> */}
+          </>
+        )}
       </div>
 
       <button className="md:hidden text-gray-400 p-2" onClick={() => setIsOpen(!isOpen)}>
@@ -57,7 +66,7 @@ export const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 glass border-b border-white/10 p-6 flex flex-col gap-4 md:hidden"
+            className="absolute top-full left-0 right-0 glass border-b border-white/10 p-6 flex flex-col gap-4 md:hidden bg-[#09090b]/95 backdrop-blur-xl"
           >
             <div className="relative group mb-2">
               <input 
@@ -68,18 +77,34 @@ export const Navbar = () => {
               <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
             </div>
             
-            <Link href="/pdf" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">PDF Tools</Link>
-            <Link href="/image" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">Image Tools</Link>
-            <Link href="/video" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">Video Tools</Link>
-            <Link href="/ai" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">AI Tools</Link>
+            <Link href="/?category=pdf#tools" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">PDF Tools</Link>
+            <Link href="/?category=image#tools" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">Image Tools</Link>
+            <Link href="/?category=video#tools" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">Video Tools</Link>
+            <Link href="/?category=ai#tools" onClick={() => setIsOpen(false)} className="text-sm font-medium text-gray-300 py-2 border-b border-white/5">AI Tools</Link>
             
-            <Link
-              href="/#tools"
-              onClick={() => setIsOpen(false)}
-              className="w-full py-3 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-600/20 text-center"
-            >
-              Start Free
-            </Link>
+            {!userId ? (
+              <Link
+                href="/#tools"
+                onClick={() => setIsOpen(false)}
+                className="w-full py-3 bg-blue-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-600/20 text-center"
+              >
+                Start Free
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-bold text-white shadow-lg text-center flex items-center justify-center gap-2"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+                <div className="flex justify-center mt-2">
+                  {/* <UserButton afterSignOutUrl="/" /> */}
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

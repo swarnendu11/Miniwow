@@ -73,7 +73,7 @@ export const ToolLayout = ({ title, description, icon: Icon, children, category,
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="glass rounded-[2rem] border-white/5 p-8 md:p-12 min-h-[400px] relative overflow-hidden group/main"
+        className="glass rounded-[2rem] border-white/5 p-6 md:p-12 min-h-[400px] relative overflow-hidden group/main"
       >
         <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-br ${gradient} opacity-[0.03] pointer-events-none group-hover/main:opacity-[0.05] transition-opacity duration-700`} />
         <div className="relative z-10 w-full h-full flex flex-col">

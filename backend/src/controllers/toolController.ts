@@ -4,6 +4,7 @@ import path from 'path';
 
 export const handleGenericTool = async (req: Request, res: Response): Promise<void> => {
   const { slug } = req.params;
+  const files = (req.files as Express.Multer.File[]) || [];
 
   try {
     // If it's a JSON request (AI/Writing tools)
@@ -32,8 +33,7 @@ export const handleGenericTool = async (req: Request, res: Response): Promise<vo
     }
 
     // If it's a multipart/form-data request (File-based tools)
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
+    if (files.length === 0) {
       res.status(400).json({ error: 'Please upload at least one file.' });
       return;
     }
@@ -46,23 +46,72 @@ export const handleGenericTool = async (req: Request, res: Response): Promise<vo
 
     // For generic tools, just return the first uploaded file back as a "processed" mock
     // This allows the frontend to show a successful download for all 200+ tools
-    const fileBytes = fs.readFileSync(file.path);
+    let fileBytes = fs.readFileSync(file.path);
+    let mimetype = file.mimetype || 'application/octet-stream';
+    let filename = `processed-${file.originalname}`;
+
+    const optionsStr = req.body.options;
+    let options: any = {};
+    try {
+      if (optionsStr) options = JSON.parse(optionsStr);
+    } catch(e) {}
+
+    if (slug === 'resize-image') {
+      const sharp = require('sharp');
+      const w = parseInt(options.width, 10);
+      const h = parseInt(options.height, 10);
+      const width = isNaN(w) ? undefined : w;
+      const height = isNaN(h) ? undefined : h;
+      if (width || height) {
+        fileBytes = await sharp(fileBytes).resize({ width, height }).toBuffer();
+      }
+    } else if (slug === 'image-adjustments') {
+      const sharp = require('sharp');
+      const b = parseFloat(options.brightness);
+      const s = parseFloat(options.saturation);
+      const h = parseInt(options.hue, 10);
+      
+      const brightness = isNaN(b) ? 1 : b;
+      const saturation = isNaN(s) ? 1 : s;
+      const hue = isNaN(h) ? 0 : h;
+      
+      fileBytes = await sharp(fileBytes).modulate({
+        brightness,
+        saturation,
+        hue
+      }).toBuffer();
+    } else if (slug === 'image-compressor') {
+      const sharp = require('sharp');
+      if (mimetype.includes('jpeg') || mimetype.includes('jpg')) {
+        fileBytes = await sharp(fileBytes).jpeg({ quality: 60 }).toBuffer();
+      } else if (mimetype.includes('png')) {
+        fileBytes = await sharp(fileBytes).png({ quality: 60 }).toBuffer();
+      } else if (mimetype.includes('webp')) {
+        fileBytes = await sharp(fileBytes).webp({ quality: 60 }).toBuffer();
+      } else {
+        fileBytes = await sharp(fileBytes).jpeg({ quality: 60 }).toBuffer();
+        mimetype = 'image/jpeg';
+        filename = filename.replace(/\.[^/.]+$/, ".jpg");
+      }
+    }
     
     // Set generic headers based on original file type or pdf if unknown
-    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="processed-${file.originalname}"`);
+    res.setHeader('Content-Type', mimetype);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     
-    res.send(Buffer.from(fileBytes));
-
-    // Cleanup all temp files
-    files.forEach(f => {
-      try {
-        fs.unlinkSync(f.path);
-      } catch (err) {}
-    });
+    res.send(fileBytes);
 
   } catch (error) {
     console.error(`Error processing tool ${slug}:`, error);
     res.status(500).json({ error: 'Internal server error while processing.' });
+  } finally {
+    // Cleanup all temp files
+    files.forEach(f => {
+      try {
+        if (f.path && fs.existsSync(f.path)) {
+          fs.unlinkSync(f.path);
+        }
+      } catch (err) {}
+    });
   }
 };

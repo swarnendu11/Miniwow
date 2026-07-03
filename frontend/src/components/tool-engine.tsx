@@ -23,6 +23,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
   const [result, setResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [options, setOptions] = useState<Record<string, string>>({});
 
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
@@ -33,7 +34,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
     try {
       if (tool.category === "AI" || tool.category === "Writing") {
         toast.loading("Generating content...");
-        const response = await axios.post(`${apiBase}/api/tools/${tool.slug}`, { text: inputText });
+        const response = await axios.post(`${apiBase}/api/tools/${tool.slug}`, { text: inputText, options });
         setResult(response.data.result);
         toast.dismiss();
         toast.success("Content generated successfully!");
@@ -44,10 +45,33 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
           return;
         }
 
+        toast.loading("Processing your files...");
+
+        if (tool.category === "Video" && (tool.slug === "compress-video" || tool.slug === "extract-audio")) {
+          // Process Video locally using WASM FFmpeg!
+          try {
+            const { compressVideo, extractAudio } = await import('@/lib/ffmpeg');
+            let resultBlob;
+            if (tool.slug === "compress-video") {
+              resultBlob = await compressVideo(files[0]);
+            } else {
+              resultBlob = await extractAudio(files[0]);
+            }
+            setResult(URL.createObjectURL(resultBlob));
+            toast.dismiss();
+            toast.success("Video processed locally!");
+            return;
+          } catch (e: any) {
+            console.error(e);
+            toast.dismiss();
+            toast.error("Error processing video locally");
+            return;
+          }
+        }
+
         const formData = new FormData();
         files.forEach(f => formData.append("files", f));
-
-        toast.loading("Processing your files...");
+        formData.append("options", JSON.stringify(options));
 
         // Connect to our backend via the same origin /api path for Vercel deployment
         let endpoint = `${apiBase}/api/tools/${tool.slug}`;
@@ -93,7 +117,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
   // Render logic based on tool category
   if (tool.category === "AI" || tool.category === "Writing") {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 h-full">
         <div className="space-y-6">
           <label className="text-sm font-bold text-gray-400 uppercase tracking-widest block mb-4">Your Input</label>
           <textarea
@@ -112,7 +136,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
           </button>
         </div>
         
-        <div className="glass rounded-2xl p-8 flex flex-col min-h-[400px]">
+        <div className="glass rounded-2xl p-6 md:p-8 flex flex-col min-h-[400px]">
           <div className="flex justify-between items-center mb-6">
              <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Result Output</span>
              {result && (
@@ -131,10 +155,10 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
 
   // File Based Tools (PDF, Image, Video, Conversion)
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
       <div className="space-y-8">
         <div 
-          className="min-h-80 border-2 border-dashed border-white/10 rounded-[2.5rem] flex flex-col items-center justify-center p-8 gap-4 hover:border-white/20 transition-all cursor-pointer bg-white/5 relative"
+          className="min-h-64 md:min-h-80 border-2 border-dashed border-white/10 rounded-[2.5rem] flex flex-col items-center justify-center p-6 md:p-8 gap-4 hover:border-white/20 transition-all cursor-pointer bg-white/5 relative"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
@@ -177,6 +201,54 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
           )}
         </div>
 
+        {/* Dynamic Tool Options */}
+        {tool.slug === "image-adjustments" && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <label className="text-gray-400 w-24 text-sm font-bold">Brightness</label>
+              <input type="range" min="0.1" max="3" step="0.1" value={options.brightness || "1"} onChange={(e) => setOptions({ ...options, brightness: e.target.value })} className="flex-1 accent-blue-500" />
+              <span className="text-white w-8 text-sm">{options.brightness || "1"}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="text-gray-400 w-24 text-sm font-bold">Saturation</label>
+              <input type="range" min="0.1" max="3" step="0.1" value={options.saturation || "1"} onChange={(e) => setOptions({ ...options, saturation: e.target.value })} className="flex-1 accent-blue-500" />
+              <span className="text-white w-8 text-sm">{options.saturation || "1"}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="text-gray-400 w-24 text-sm font-bold">Hue (°)</label>
+              <input type="range" min="0" max="360" step="1" value={options.hue || "0"} onChange={(e) => setOptions({ ...options, hue: e.target.value })} className="flex-1 accent-blue-500" />
+              <span className="text-white w-8 text-sm">{options.hue || "0"}</span>
+            </div>
+          </div>
+        )}
+        {tool.slug === "resize-image" && (
+          <div className="flex gap-4">
+            <input
+              type="number"
+              placeholder="Width (px)"
+              value={options.width || ""}
+              onChange={(e) => setOptions({ ...options, width: e.target.value })}
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50"
+            />
+            <input
+              type="number"
+              placeholder="Height (px)"
+              value={options.height || ""}
+              onChange={(e) => setOptions({ ...options, height: e.target.value })}
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50"
+            />
+          </div>
+        )}
+        {tool.slug === "protect-pdf" && (
+          <input
+            type="password"
+            placeholder="PDF Password"
+            value={options.password || ""}
+            onChange={(e) => setOptions({ ...options, password: e.target.value })}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50"
+          />
+        )}
+        
         <button
           onClick={handleProcess}
           disabled={files.length === 0 || isProcessing}
@@ -186,7 +258,7 @@ export const ToolEngine = ({ tool }: ToolEngineProps) => {
         </button>
       </div>
 
-      <div className="glass rounded-[2.5rem] border-white/5 p-12 flex flex-col items-center justify-center min-h-[400px] text-center">
+      <div className="glass rounded-[2.5rem] border-white/5 p-6 md:p-12 flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] text-center">
         {result ? (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
              <div className="w-24 h-24 bg-emerald-500/10 rounded-full mx-auto flex items-center justify-center text-emerald-500 shadow-xl shadow-emerald-500/10">

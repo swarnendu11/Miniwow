@@ -151,6 +151,14 @@ export const TOOLS = [
     category: "Image",
     gradient: "from-pink-500 to-rose-400"
   },
+  {
+    title: "Image Adjustments",
+    slug: "image-adjustments",
+    description: "Adjust brightness, contrast, and saturation of your images.",
+    icon: Palette,
+    category: "Image",
+    gradient: "from-fuchsia-500 to-purple-500"
+  },
 
   // VIDEO TOOLS
   {
